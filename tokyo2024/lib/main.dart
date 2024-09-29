@@ -47,8 +47,8 @@ class _BottomTabsControllerState extends State<BottomTabsController> {
       label: 'Home',
     ),
     const BottomNavigationBarItem(
-      icon: Icon(Icons.search),
-      label: 'Search',
+      icon: Icon(Icons.map),
+      label: 'Map',
     ),
     const BottomNavigationBarItem(
       icon: Icon(Icons.person),
@@ -59,9 +59,9 @@ class _BottomTabsControllerState extends State<BottomTabsController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Bottom Tabs Example'),
-      ),
+      // appBar: AppBar(
+      //   title: const Text('Bottom Tabs Example'),
+      // ),
       body: _pages[_currentIndex], // 現在のタブに対応するページを表示
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
