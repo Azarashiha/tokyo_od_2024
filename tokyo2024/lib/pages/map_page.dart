@@ -1,13 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  String accessToken = const String.fromEnvironment('MAPBOX_ACCESS_TOKEN');
-  MapboxOptions.setAccessToken(accessToken);
-  runApp(MaterialApp(home: MapPage()));
-}
-
 class MapPage extends StatefulWidget {
   const MapPage();
 
@@ -20,11 +13,13 @@ class FullMapState extends State<MapPage> {
 
   void _onMapCreated(MapboxMap mapboxMap) {
     this.mapboxMap = mapboxMap;
-    mapboxMap.loadStyleURI('mapbox://styles/mapbox/light-v10');
+    mapboxMap.loadStyleURI('mapbox://styles/mapbox/standard');
   }
 
   @override
   Widget build(BuildContext context) {
+    // dotenv.get("MAPBOX_API") の呼び出しを削除
+    // print(dotenv.get("MAPBOX_API"));
     return Scaffold(
       // appBar: AppBar(
       //   title: const Text('Mapbox Flutter Demo'),

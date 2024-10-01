@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'pages/home_page.dart';
 import 'pages/map_page.dart';
 import 'pages/profile_page.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env'); // 環境変数の読み込み
+
+  String accessToken = dotenv.get('MAPBOX_API');
+  print('Mapbox Access Token: $accessToken'); // デバッグ用
+
+  MapboxOptions.setAccessToken(accessToken);
+
   runApp(MyApp());
 }
 

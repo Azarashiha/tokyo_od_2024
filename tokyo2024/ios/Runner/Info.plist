@@ -2,8 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>MapboxAccessToken</key>
-	<string>pk.eyJ1IjoiYXphcmFzaGluayIsImEiOiJjbHNlN29jZzIxNTg1MmlxbGlyMTA0dzh3In0.paWtIhuJ3n4NrWyvuuhGyw</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>常におよびアプリ使用中の位置情報の利用についての説明</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>アプリ使用中の位置情報の利用についての説明</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
