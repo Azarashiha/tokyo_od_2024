@@ -33,12 +33,12 @@ class _MapPageState extends State<MapPage> {
         sourceLayer: 'N022023_m2024', // 実際のレイヤー名に置き換えてください
         lineColorExpression: [
           'match',
-          ['get', 'N02_001'],
-          '12',
-          '#FF0000', // 赤色（Color.fromARGB(255, 255, 0, 0)に相当）
+          ['get', 'N02_003'],
+          '池上線',
+          '#f988fc', // 赤色（Color.fromARGB(255, 255, 0, 0)に相当）
           '大井町線',
-          '#0000FF', // 青色（Color.fromARGB(255, 0, 0, 255)に相当）
-          '#000000', // デフォルト色（黒）
+          '#ff9933', // 青色（Color.fromARGB(255, 0, 0, 255)に相当）
+          '#595959', // デフォルト色（黒）
         ],
         lineWidth: 2.0,
       ),
