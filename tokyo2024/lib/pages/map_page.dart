@@ -25,6 +25,7 @@ class _MapPageState extends State<MapPage> {
       minzoom: 0,
       maxzoom: 14,
     ));
+    
 
     // Add a layer to display the vector tiles
     await mapboxMap?.style.addLayer(
