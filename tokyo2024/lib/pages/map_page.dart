@@ -48,7 +48,7 @@ class _MapPageState extends State<MapPage> {
   List<String> radarLayerIds = [];
 
   // プールの作成（同時に5つのタスクを実行）
-  final Pool pool = Pool(10);
+  final Pool pool = Pool(5);
 
   @override
   void initState() {
@@ -161,10 +161,13 @@ class _MapPageState extends State<MapPage> {
       // プールを使って同時に5つのタスクを実行
       tasks.add(pool.withResource(() async {
         try {
+          // tile.urlが'/'で始まっていない場合は'/'を追加
+          String tileUrl = tile.url.startsWith('/') ? tile.url : '/${tile.url}';
+
           // ラスタソースを追加
           await mapboxMap?.style.addSource(RasterSource(
             id: sourceId,
-            tiles: ['https://gis.otenkiapi.com${tile.url}'],
+            tiles: ['https://gis.otenkiapi.com$tileUrl'],
             tileSize: 256,
           ));
 
@@ -295,15 +298,10 @@ class _MapPageState extends State<MapPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // レイヤー選択ボタンをAppBarに配置
-      appBar: AppBar(
-        title: Text('マップ'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.layers),
-            onPressed: _showLayerSelectionModal,
-          ),
-        ],
+      // レイヤー選択ボタンをFloatingActionButtonとして配置
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showLayerSelectionModal,
+        child: Icon(Icons.layers),
       ),
       body: Column(
         children: [
@@ -338,6 +336,43 @@ class _MapPageState extends State<MapPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // タイムスライダーのタイトルと説明ボタン
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '時間選択',
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.info_outline, color: Colors.black54),
+                      onPressed: () {
+                        // 任意のヘルプや説明を表示するアクション
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: Text('タイムスライダーについて'),
+                              content: Text('スライダーを動かして、過去、現在、予測の雨雲レーダーを切り替えます。'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Text('閉じる'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
                 SizedBox(height: 8),
                 // タイルのタイプと時刻の表示
                 Row(
@@ -391,7 +426,7 @@ class _MapPageState extends State<MapPage> {
                           value: sliderValue,
                           min: 0.0,
                           max: (tiles.length - 1).toDouble(),
-                          divisions: tiles.length - 1,
+                          divisions: tiles.length >= 2 ? tiles.length - 1 : null,
                           label: currentIndex != null && currentIndex! < tiles.length
                               ? _formatTime(tiles[currentIndex!].time)
                               : '',
