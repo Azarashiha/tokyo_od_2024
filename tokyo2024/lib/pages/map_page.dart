@@ -314,7 +314,7 @@ class _MapPageState extends State<MapPage> {
                 center: Point(
                   coordinates: Position(139.711713, 35.633635),
                 ), // 東京の座標を中心に設定
-                zoom: 11.0, // 初期ズームレベルを設定
+                zoom: 5.0, // 初期ズームレベルを設定
               ),
               onMapCreated: _onMapCreated, // マップ作成時のコールバック
               onStyleLoadedListener: _onStyleLoadedCallback, // スタイル読み込み後のコールバック
@@ -336,43 +336,6 @@ class _MapPageState extends State<MapPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // タイムスライダーのタイトルと説明ボタン
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '時間選択',
-                      style: TextStyle(
-                        color: Colors.black87,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.info_outline, color: Colors.black54),
-                      onPressed: () {
-                        // 任意のヘルプや説明を表示するアクション
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: Text('タイムスライダーについて'),
-                              content: Text('スライダーを動かして、過去、現在、予測の雨雲レーダーを切り替えます。'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: Text('閉じる'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ],
-                ),
                 SizedBox(height: 8),
                 // タイルのタイプと時刻の表示
                 Row(
