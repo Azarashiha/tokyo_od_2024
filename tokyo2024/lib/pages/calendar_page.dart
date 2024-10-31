@@ -1,10 +1,11 @@
+// pages/calendar_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
-
-void main() {
-  runApp(const MyApp());
-}
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'profile_page.dart'; // Update the import if necessary
 
 class Event {
   String title;
@@ -18,21 +19,20 @@ class Event {
     required this.start,
     required this.end,
   });
-}
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  Map<String, dynamic> toJson() => {
+        'title': title,
+        'memo': memo,
+        'start': start.toIso8601String(),
+        'end': end.toIso8601String(),
+      };
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'カレンダーアプリ',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const CalendarPage(),
-    );
-  }
+  factory Event.fromJson(Map<String, dynamic> json) => Event(
+        title: json['title'],
+        memo: json['memo'],
+        start: DateTime.parse(json['start']),
+        end: DateTime.parse(json['end']),
+      );
 }
 
 class CalendarPage extends StatefulWidget {
@@ -56,6 +56,7 @@ class _CalendarPageState extends State<CalendarPage> {
     super.initState();
     _selectedDay = _focusedDay;
     _selectedEvents = ValueNotifier(_getEventsForDay(_selectedDay!));
+    _loadEvents();
   }
 
   @override
@@ -68,6 +69,35 @@ class _CalendarPageState extends State<CalendarPage> {
     return _events[DateTime(day.year, day.month, day.day)] ?? [];
   }
 
+  Future<void> _loadEvents() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? eventsJson = prefs.getString('events');
+    if (eventsJson != null) {
+      final Map<String, dynamic> decoded = jsonDecode(eventsJson);
+      setState(() {
+        _events.clear();
+        decoded.forEach((key, value) {
+          final date = DateTime.parse(key);
+          final eventsList = (value as List)
+              .map((eventJson) => Event.fromJson(eventJson))
+              .toList();
+          _events[DateTime(date.year, date.month, date.day)] = eventsList;
+        });
+        _selectedEvents.value = _getEventsForDay(_selectedDay!);
+      });
+    }
+  }
+
+  Future<void> _saveEvents() async {
+    final prefs = await SharedPreferences.getInstance();
+    final Map<String, dynamic> encoded = {};
+    _events.forEach((key, value) {
+      encoded[key.toIso8601String()] =
+          value.map((event) => event.toJson()).toList();
+    });
+    await prefs.setString('events', jsonEncode(encoded));
+  }
+
   void _addEvent(DateTime day, Event event) {
     final date = DateTime(day.year, day.month, day.day);
     if (_events[date] != null) {
@@ -76,6 +106,7 @@ class _CalendarPageState extends State<CalendarPage> {
       _events[date] = [event];
     }
     _selectedEvents.value = _getEventsForDay(_selectedDay!);
+    _saveEvents(); // Save events after adding
   }
 
   void _showAddEventDialog(DateTime day) {
@@ -87,145 +118,157 @@ class _CalendarPageState extends State<CalendarPage> {
     showDialog(
       context: context,
       builder: (context) {
-        return Dialog(
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.9,
-            height: 500,
-            padding: const EdgeInsets.all(16.0),
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  const Text(
-                    'イベントを追加',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  TextField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(labelText: 'タイトル'),
-                  ),
-                  TextField(
-                    controller: _memoController,
-                    decoration: const InputDecoration(labelText: 'メモ'),
-                    maxLines: 5,
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(_startTime == null
-                            ? '開始時間: 未選択'
-                            : '開始時間: ${DateFormat('yyyy/MM/dd HH:mm').format(_startTime!)}'),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () async {
-                          DateTime? picked = await showDatePicker(
-                            context: context,
-                            initialDate: day,
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime(2100),
-                          );
-                          if (picked != null) {
-                            TimeOfDay? time = await showTimePicker(
+        return StatefulBuilder(builder: (context, setStateDialog) {
+          return Dialog(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              height: 500,
+              padding: const EdgeInsets.all(16.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const Text(
+                      'イベントを追加',
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    TextField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(labelText: 'タイトル'),
+                    ),
+                    TextField(
+                      controller: _memoController,
+                      decoration: const InputDecoration(labelText: 'メモ'),
+                      maxLines: 5,
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(_startTime == null
+                              ? '開始時間: 未選択'
+                              : '開始時間: ${DateFormat('yyyy/MM/dd HH:mm').format(_startTime!)}'),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.calendar_today),
+                          onPressed: () async {
+                            DateTime? picked = await showDatePicker(
                               context: context,
-                              initialTime: TimeOfDay.now(),
+                              initialDate: day,
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
                             );
-                            if (time != null) {
-                              setState(() {
-                                _startTime = DateTime(
-                                    picked.year,
-                                    picked.month,
-                                    picked.day,
-                                    time.hour,
-                                    time.minute);
-                              });
+                            if (picked != null) {
+                              TimeOfDay? time = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.now(),
+                              );
+                              if (time != null) {
+                                setStateDialog(() {
+                                  _startTime = DateTime(
+                                      picked.year,
+                                      picked.month,
+                                      picked.day,
+                                      time.hour,
+                                      time.minute);
+                                });
+                              }
                             }
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(_endTime == null
-                            ? '終了時間: 未選択'
-                            : '終了時間: ${DateFormat('yyyy/MM/dd HH:mm').format(_endTime!)}'),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () async {
-                          DateTime? picked = await showDatePicker(
-                            context: context,
-                            initialDate: day,
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime(2100),
-                          );
-                          if (picked != null) {
-                            TimeOfDay? time = await showTimePicker(
+                          },
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(_endTime == null
+                              ? '終了時間: 未選択'
+                              : '終了時間: ${DateFormat('yyyy/MM/dd HH:mm').format(_endTime!)}'),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.calendar_today),
+                          onPressed: () async {
+                            DateTime? picked = await showDatePicker(
                               context: context,
-                              initialTime: TimeOfDay.now(),
+                              initialDate: day,
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
                             );
-                            if (time != null) {
-                              setState(() {
-                                _endTime = DateTime(
-                                    picked.year,
-                                    picked.month,
-                                    picked.day,
-                                    time.hour,
-                                    time.minute);
-                              });
+                            if (picked != null) {
+                              TimeOfDay? time = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.now(),
+                              );
+                              if (time != null) {
+                                setStateDialog(() {
+                                  _endTime = DateTime(
+                                      picked.year,
+                                      picked.month,
+                                      picked.day,
+                                      time.hour,
+                                      time.minute);
+                                });
+                              }
                             }
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        child: const Text('キャンセル'),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                      const SizedBox(width: 10),
-                      ElevatedButton(
-                        child: const Text('保存'),
-                        onPressed: () {
-                          if (_titleController.text.isEmpty ||
-                              _startTime == null ||
-                              _endTime == null) {
-                            // 簡単なバリデーション
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('必要な情報を全て入力してください')),
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          child: const Text('キャンセル'),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                        const SizedBox(width: 10),
+                        ElevatedButton(
+                          child: const Text('保存'),
+                          onPressed: () {
+                            if (_titleController.text.isEmpty ||
+                                _startTime == null ||
+                                _endTime == null) {
+                              // 簡単なバリデーション
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('必要な情報を全て入力してください')),
+                              );
+                              return;
+                            }
+
+                            if (_endTime!.isBefore(_startTime!)) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('終了時間は開始時間より後にしてください')),
+                              );
+                              return;
+                            }
+
+                            final newEvent = Event(
+                              title: _titleController.text,
+                              memo: _memoController.text,
+                              start: _startTime!,
+                              end: _endTime!,
                             );
-                            return;
-                          }
 
-                          final newEvent = Event(
-                            title: _titleController.text,
-                            memo: _memoController.text,
-                            start: _startTime!,
-                            end: _endTime!,
-                          );
+                            setState(() {
+                              _addEvent(day, newEvent);
+                            });
 
-                          setState(() {
-                            _addEvent(day, newEvent);
-                          });
-
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                    ],
-                  ),
-                ],
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
+          );
+        });
       },
     );
   }
@@ -321,6 +364,17 @@ class _CalendarPageState extends State<CalendarPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('カレンダー'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfilePage()),
+              );
+            },
+          ),
+        ],
       ),
       body: TableCalendar<Event>(
         firstDay: DateTime(2000),
